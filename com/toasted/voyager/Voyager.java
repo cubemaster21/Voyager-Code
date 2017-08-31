@@ -1,19 +1,23 @@
 package com.toasted.voyager;
 
+import java.awt.Point;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public class Voyager extends ApplicationAdapter {
+public class Voyager extends ApplicationAdapter implements InputProcessor{
 	public static Graphics G; //literally only exists so I don't have to rewrite "Gdx.graphics" every other line
 	SpriteBatch uiBatch;
 	Texture img;
 	OrthographicCamera uiCam;
-	
+	int shipX = 0, shipY = 0;
 	Map map;
 	@Override
 	public void create () {
@@ -22,23 +26,111 @@ public class Voyager extends ApplicationAdapter {
 		uiCam.setToOrtho(false, G.getWidth(), G.getHeight());
 		uiBatch = new SpriteBatch();
 		uiBatch.setProjectionMatrix(uiCam.combined);
-		//img = new Texture("badlogic.jpg");
-		map = MapGenerator.generateMap(100);
+		img = new Texture("ship.png");
+		map = MapGenerator.generateMap(150);
+		Gdx.input.setInputProcessor(this);
 	}
 
 	@Override
 	public void render () {
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		uiBatch.begin();
-		//uiBatch.draw(img, 0, 0);
-		uiBatch.end();
+		
 		map.draw(uiBatch);
+		uiBatch.begin();
+		uiBatch.draw(img, shipX * 5, shipY * 5, 5, 5);
+		uiBatch.end();
 	}
 	
 	@Override
 	public void dispose () {
 		uiBatch.dispose();
 		//img.dispose();
+	}
+	public void moveTo(Ship s, int x, int y){
+		Point p = map.getMapCoordinates(x, y);
+		int visionRadius = 3;
+		shipX = p.x;
+		shipY = p.y;
+		Tile t = map.getTile(shipX, shipY);
+		//discovery!
+		for(int i = -visionRadius;i < visionRadius + 1;i++){
+			for(int j = -visionRadius;j < visionRadius + 1;j++){
+				Tile d = map.getTile(shipX + i, shipY + j);
+				d.discovered = true;
+				if(d.land){
+					for(Tile z: d.parentIsland){
+						z.discovered = true;
+					}
+				}
+			}
+		}
+		if(t.hasEvent()){
+			Event e = t.getEvent();
+			if(!e.triggered){
+				//do something
+				e.activate(null, map);
+			}
+		}
+	}
+	@Override
+	public boolean keyDown(int keycode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean keyUp(int keycode) {
+		switch(keycode){
+		case Keys.UP:
+			moveTo(null, shipX, shipY + 1);
+			break;
+		case Keys.DOWN:
+			moveTo(null, shipX, shipY - 1);
+			break;
+		case Keys.LEFT:
+			moveTo(null, shipX - 1, shipY);
+			break;
+		case Keys.RIGHT:
+			moveTo(null, shipX + 1, shipY);
+			break;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean keyTyped(char character) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean scrolled(int amount) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }
