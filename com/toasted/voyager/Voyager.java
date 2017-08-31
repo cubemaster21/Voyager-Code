@@ -13,6 +13,8 @@ public class Voyager extends ApplicationAdapter {
 	SpriteBatch uiBatch;
 	Texture img;
 	OrthographicCamera uiCam;
+	
+	Map map;
 	@Override
 	public void create () {
 		G = Gdx.graphics;
@@ -20,7 +22,8 @@ public class Voyager extends ApplicationAdapter {
 		uiCam.setToOrtho(false, G.getWidth(), G.getHeight());
 		uiBatch = new SpriteBatch();
 		uiBatch.setProjectionMatrix(uiCam.combined);
-		img = new Texture("badlogic.jpg");
+		//img = new Texture("badlogic.jpg");
+		map = MapGenerator.generateMap(100);
 	}
 
 	@Override
@@ -28,13 +31,14 @@ public class Voyager extends ApplicationAdapter {
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		uiBatch.begin();
-		uiBatch.draw(img, 0, 0);
+		//uiBatch.draw(img, 0, 0);
 		uiBatch.end();
+		map.draw(uiBatch);
 	}
 	
 	@Override
 	public void dispose () {
 		uiBatch.dispose();
-		img.dispose();
+		//img.dispose();
 	}
 }
