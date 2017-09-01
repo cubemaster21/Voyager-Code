@@ -11,6 +11,7 @@ public class Map {
 	public Tile[][] data;
 	public int size;
 	private ShapeRenderer s = new ShapeRenderer();
+	public int islandCount = 0;
 	public boolean isLand(int x, int y){
 
 		return getTile(x, y).land;

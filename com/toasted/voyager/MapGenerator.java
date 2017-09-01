@@ -5,6 +5,7 @@ import java.util.Stack;
 
 public class MapGenerator {
 	public static Map generateMap(int size){
+		long startTime = System.currentTimeMillis();
 		Map map = new Map();
 		map.size = size;
 		map.data = new Tile[size][size];
@@ -37,7 +38,9 @@ public class MapGenerator {
 		t.event = new EventKraken(t);
 		
 		detectIslands(map);
-		
+		long timeToGenerate = System.currentTimeMillis() - startTime;
+		System.out.println("Time to generate: " + timeToGenerate / 1000.0 + " seconds");
+		System.out.println("Map has "  + map.islandCount + " islands");
 		return map;
 	}
 	private static void detectIslands(Map m){
@@ -47,15 +50,23 @@ public class MapGenerator {
 				Tile t = m.getTile(i, j);
 				if(!t.land || t.parentIsland != null) continue; // if tile isn't water OR it already belongs to an island
 				Island newIsland = new Island();
+				m.islandCount++;
 				lands.push(t);
 				Tile z;
 				while(!lands.isEmpty()){
+					System.out.println(lands.size());
 					z = lands.pop();
 					newIsland.add(z);
-					if(m.isLand(z.x - 1, z.y)) lands.push(m.getTile(z.x - 1, z.y));
-					if(m.isLand(z.x + 1, z.y)) lands.push(m.getTile(z.x + 1, z.y));
-					if(m.isLand(z.x, z.y - 1)) lands.push(m.getTile(z.x, z.y - 1));
-					if(m.isLand(z.x, z.y + 1)) lands.push(m.getTile(z.x, z.y + 1));
+					
+					for(int e = -1;e < 2;e++){
+						for(int f = -1;f < 2;f++){
+							if(e == f) continue;
+							Tile neighbor = m.getTile(z.x + e, z.y + f);
+							if(neighbor.land && neighbor.parentIsland == null){
+								lands.push(neighbor);
+							}
+						}
+					}
 				}
 			}
 		}

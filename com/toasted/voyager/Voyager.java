@@ -17,8 +17,15 @@ public class Voyager extends ApplicationAdapter implements InputProcessor{
 	SpriteBatch uiBatch;
 	Texture img;
 	OrthographicCamera uiCam;
-	int shipX = 0, shipY = 0;
+	Ship ship;
 	Map map;
+	float tickSpeed = .25f;
+	
+	public static final int NORTH = 1,
+							SOUTH = 2,
+							EAST  = 3,
+							WEST  = 4;
+	
 	@Override
 	public void create () {
 		G = Gdx.graphics;
@@ -27,18 +34,28 @@ public class Voyager extends ApplicationAdapter implements InputProcessor{
 		uiBatch = new SpriteBatch();
 		uiBatch.setProjectionMatrix(uiCam.combined);
 		img = new Texture("ship.png");
-		map = MapGenerator.generateMap(150);
+		map = MapGenerator.generateMap(1000);
 		Gdx.input.setInputProcessor(this);
+		
+		ship = new Ship();
 	}
 
 	@Override
 	public void render () {
+		
+		tickSpeed -= G.getDeltaTime();
+		if(tickSpeed <= 0){
+			tickSpeed = .25f;
+			move(ship.heading);
+		}
+		
+		
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		map.draw(uiBatch);
 		uiBatch.begin();
-		uiBatch.draw(img, shipX * 5, shipY * 5, 5, 5);
+		uiBatch.draw(img, ship.x * 5, ship.y * 5, 5, 5);
 		uiBatch.end();
 	}
 	
@@ -49,27 +66,38 @@ public class Voyager extends ApplicationAdapter implements InputProcessor{
 	}
 	public void moveTo(Ship s, int x, int y){
 		Point p = map.getMapCoordinates(x, y);
-		int visionRadius = 3;
-		shipX = p.x;
-		shipY = p.y;
-		Tile t = map.getTile(shipX, shipY);
+		if(map.isLand(p.x, p.y)){
+			s.heading = 0;
+			return;
+		}
+		
+		ship.x = p.x;
+		ship.y = p.y;
+		Tile t = map.getTile(ship.x, ship.y);
 		//discovery!
-		for(int i = -visionRadius;i < visionRadius + 1;i++){
-			for(int j = -visionRadius;j < visionRadius + 1;j++){
-				Tile d = map.getTile(shipX + i, shipY + j);
-				d.discovered = true;
-				if(d.land){
-					for(Tile z: d.parentIsland){
-						z.discovered = true;
+		for(int i = -s.visionRadius;i < s.visionRadius + 1;i++){
+			for(int j = -s.visionRadius;j < s.visionRadius + 1;j++){
+				Tile d = map.getTile(ship.x + i, ship.y + j);
+				
+				//island discovery?
+				if(d.land && !d.discovered){
+					if(!d.parentIsland.isSpotted()){
+						Event e  = new EventIslandDiscovery(d);
+						e.activate(ship, map);
 					}
+//					for(Tile z: d.parentIsland){
+//						z.discovered = true;
+//					}
 				}
+				
+				d.discovered = true;
 			}
 		}
 		if(t.hasEvent()){
 			Event e = t.getEvent();
 			if(!e.triggered){
 				//do something
-				e.activate(null, map);
+				e.activate(ship, map);
 			}
 		}
 	}
@@ -78,21 +106,41 @@ public class Voyager extends ApplicationAdapter implements InputProcessor{
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	public void move(int direction){
+		switch(direction){
+		case NORTH:
+			moveTo(ship, ship.x, ship.y + 1);
+			break;
+		case SOUTH:
+			moveTo(ship, ship.x, ship.y - 1);
+			break;
+		case WEST:
+			moveTo(ship, ship.x - 1, ship.y);
+			break;
+		case EAST:
+			moveTo(ship, ship.x + 1, ship.y);
+			break;
+		}
+		//ship.heading = direction;
+	}
 	@Override
 	public boolean keyUp(int keycode) {
 		switch(keycode){
 		case Keys.UP:
-			moveTo(null, shipX, shipY + 1);
+			ship.heading = NORTH;
+//			move(NORTH);
 			break;
 		case Keys.DOWN:
-			moveTo(null, shipX, shipY - 1);
+			ship.heading = SOUTH;
+//			move(SOUTH);
 			break;
 		case Keys.LEFT:
-			moveTo(null, shipX - 1, shipY);
+			ship.heading = WEST;
+//			move(WEST);
 			break;
 		case Keys.RIGHT:
-			moveTo(null, shipX + 1, shipY);
+			ship.heading = EAST;
+//			move(EAST);
 			break;
 		}
 		return false;
